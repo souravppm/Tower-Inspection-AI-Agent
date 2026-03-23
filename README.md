@@ -15,7 +15,7 @@ To keep the repository clean, the heavy dataset and model weight (`.pt`) files a
 2. **Dataset:** Place your drone imagery dataset inside a `datasets/` folder in the root directory.
 
 ## ⚙️ Setup & Installation
-1. Clone this repository: `git clone https://github.com/your-username/Tower-Inspection-AI-Agent.git`
+1. Clone this repository: `git clone https://github.com/souravppm/Tower-Inspection-AI-Agent.git`
 2. Create a virtual environment and activate it.
 3. Install dependencies: `pip install -r requirements.txt`
 4. Create a `.env` file in the root directory and add your Groq API key:
