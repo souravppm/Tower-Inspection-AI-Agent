@@ -1,5 +1,9 @@
 venv/
 __pycache__/
 .env
-models/*.pt
-models/*.onnx
+*.pt
+*.onnx
+*.jpg
+datasets/
+runs/
+.cache/
