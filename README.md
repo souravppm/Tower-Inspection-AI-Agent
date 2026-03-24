@@ -1,6 +1,9 @@
 # 🗼 Multimodal Tower Inspection & Agentic Reporting System
 
-An end-to-end Applied AI pipeline that analyzes telecom tower structural health using **Custom Vision Models (YOLOv8)**, **Hybrid Area Mapping (OpenCV)**, and **LLM Agents (Groq Llama 3.1)**.
+**Automating structural health monitoring with deep learning and AI agents.** Manual telecom tower inspections are slow, dangerous, and lack precise damage quantification. This project solves that by creating an end-to-end pipeline that verifies drone imagery, detects structural anomalies, calculates exact damage area percentages, and automatically generates executive PDF reports.
+
+Built with **Custom Vision Models (YOLOv8)**, **Hybrid Area Mapping (OpenCV)**, and **LLM Agents (Groq Llama 3.1)**.
+
 ## 🛠️ Tech Stack & Tools
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
