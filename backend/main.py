@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 import shutil
 import os
-from backend.vision_model import analyze_tower_image
+from backend.vision_model import analyze_tower_image, validate_is_tower
 from backend.llm_agent import generate_report
 
 # Initialize the FastAPI application
@@ -51,6 +51,13 @@ async def analyze_image(file: UploadFile = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
+        # Validate image first
+        if not validate_is_tower(file_path):
+            raise HTTPException(
+                status_code=400, 
+                detail="OOD_ERROR: Invalid Input. Please upload a clear image of a telecom tower."
+            )
+            
         # Analyze the saved image
         result = analyze_tower_image(file_path)
         
@@ -59,6 +66,8 @@ async def analyze_image(file: UploadFile = File(...)):
         
         return {"detections": result, "report": report}
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process image: {str(e)}")
         
@@ -91,6 +100,13 @@ async def detect_batch(files: List[UploadFile] = File(...)):
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
                 
+            # Validate image first
+            if not validate_is_tower(file_path):
+                raise HTTPException(
+                    status_code=400, 
+                    detail="OOD_ERROR: Invalid Input. Please upload a clear image of a telecom tower."
+                )
+                
             # Analyze the saved image
             result = analyze_tower_image(file_path)
             
@@ -106,7 +122,7 @@ async def detect_batch(files: List[UploadFile] = File(...)):
             for d in result:
                 conf = d.get("confidence", 0)
                 if conf >= 0.5:
-                    box = d.get("box", [])
+                    box = d.get("bbox", [])
                     if len(box) == 4:
                         x1, y1, x2, y2 = box
                         color = "lime" if conf >= 0.5 else "red"
@@ -118,6 +134,8 @@ async def detect_batch(files: List[UploadFile] = File(...)):
             
             annotated_images_b64[file_name] = b64_str
             
+        except HTTPException:
+            raise
         except Exception as e:
             print(f"Failed to process {file_name}: {e}")
         finally:

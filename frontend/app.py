@@ -156,7 +156,15 @@ def main():
                 try:
                     response = requests.post("http://localhost:8000/detect/", files=files_payload)
                     if response.status_code != 200:
-                        st.error(f"Backend API Error: {response.text}")
+                        try:
+                            err_data = response.json()
+                            err_detail = err_data.get("detail", "")
+                            if "OOD_ERROR" in err_detail:
+                                st.error(err_detail)
+                            else:
+                                st.error(f"Backend API Error: {err_detail or response.text}")
+                        except Exception:
+                            st.error(f"Backend API Error: {response.text}")
                         st.stop()
                         
                     result = response.json()
@@ -210,60 +218,80 @@ def main():
         
         st.success("Fleet Analysis Complete!")
         
-        # Images
-        if annotated_images_dict:
-            tabs = st.tabs(list(annotated_images_dict.keys()))
-            for tab, filename in zip(tabs, annotated_images_dict.keys()):
-                with tab:
-                    st.image(annotated_images_dict[filename], caption=f"Annotated: {filename}", use_container_width=True)
-        else:
-            st.warning("No annotated images were returned from the analysis.")
-
-        # Metrics
-        met1, met2 = st.columns(2)
-        met1.metric(label="Detected Joints", value=total_joints)
-        met2.metric(label="Average AI Confidence", value=f"{avg_conf:.1%}")
-
-        # Gauge Chart
-        st.markdown("### Overall Tower Health")
-        if health_score < 50:
-            color = "red"
-        elif health_score <= 79:
-            color = "gold"
-        else:
-            color = "green"
+        # Enterprise Dashboard Layout
+        db_col1, db_col2 = st.columns([1.5, 1])
+        
+        with db_col1:
+            # Images
+            if annotated_images_dict:
+                tabs = st.tabs(list(annotated_images_dict.keys()))
+                for tab, filename in zip(tabs, annotated_images_dict.keys()):
+                    with tab:
+                        st.image(annotated_images_dict[filename], caption=f"Annotated: {filename}", use_container_width=True)
+            else:
+                st.warning("No annotated images were returned from the analysis.")
             
-        fig = go.Figure(go.Indicator(
-            mode = "gauge+number",
-            value = health_score,
-            domain = {'x': [0, 1], 'y': [0, 1]},
-            title = {'text': "Fleet Health Score"},
-            gauge = {
-                'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                'bar': {'color': color},
-                'bgcolor': "white",
-                'borderwidth': 2,
-                'bordercolor': "gray",
-                'steps': [
-                    {'range': [0, 50], 'color': 'rgba(255, 0, 0, 0.1)'},
-                    {'range': [50, 79], 'color': 'rgba(255, 215, 0, 0.1)'},
-                    {'range': [80, 100], 'color': 'rgba(0, 128, 0, 0.1)'}
-                ],
-            }
-        ))
-        fig.update_layout(margin=dict(l=20, r=20, t=50, b=20), height=300)
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # LLM Report & PDF
-        st.markdown("### Fleet-Wide Executive Summary")
-        st.info(res["llm_report"])
-        
-        st.download_button(
-            label="📥 Download Official PDF Report",
-            data=bytes(res["pdf_bytes"]),
-            file_name="fleet_wide_report.pdf",
-            mime="application/pdf"
-        )
+            # LLM Report & PDF
+            with st.expander('📄 View Detailed Executive Report', expanded=True):
+                st.markdown("### Fleet-Wide Executive Summary")
+                st.write(res["llm_report"])
+            
+            st.download_button(
+                label="📥 Download Official PDF Report",
+                data=bytes(res["pdf_bytes"]),
+                file_name="fleet_wide_report.pdf",
+                mime="application/pdf"
+            )
+
+        with db_col2:
+            # Metrics
+            met1, met2 = st.columns(2)
+            met1.metric(label="Detected Joints", value=total_joints)
+            met2.metric(label="Average AI Confidence", value=f"{avg_conf:.1%}")
+
+            # Gauge Chart
+            st.markdown("### Overall Tower Health")
+            if health_score < 50:
+                color = "red"
+            elif health_score <= 79:
+                color = "gold"
+            else:
+                color = "green"
+                
+            fig = go.Figure(go.Indicator(
+                mode = "gauge+number",
+                value = health_score,
+                domain = {'x': [0, 1], 'y': [0, 1]},
+                title = {'text': "Fleet Health Score"},
+                gauge = {
+                    'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                    'bar': {'color': color},
+                    'bgcolor': "white",
+                    'borderwidth': 2,
+                    'bordercolor': "gray",
+                    'steps': [
+                        {'range': [0, 50], 'color': 'rgba(255, 0, 0, 0.1)'},
+                        {'range': [50, 79], 'color': 'rgba(255, 215, 0, 0.1)'},
+                        {'range': [80, 100], 'color': 'rgba(0, 128, 0, 0.1)'}
+                    ],
+                }
+            ))
+            fig.update_layout(margin=dict(l=20, r=20, t=50, b=20), height=300)
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.markdown("### Detection Details")
+            if all_detections:
+                display_data = []
+                for d in all_detections:
+                    display_data.append({
+                        "Component": str(d.get('class_name', 'Unknown')).capitalize(),
+                        "Confidence": d.get('confidence', 0.0),
+                        "Damage (%)": d.get('damage_area_percentage', 0.0)
+                    })
+                df = pd.DataFrame(display_data)
+                st.dataframe(df, use_container_width=True, hide_index=True)
+            else:
+                st.info("No detections to display.")
     elif st.session_state.raw_images:
         tabs = st.tabs([img["filename"] for img in st.session_state.raw_images])
         for tab, img in zip(tabs, st.session_state.raw_images):

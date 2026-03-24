@@ -6,3 +6,5 @@ langchain
 openai
 python-dotenv
 python-multipart
+transformers
+torch>=2.6.0
