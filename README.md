@@ -87,7 +87,7 @@ To maintain a lightweight repository, heavy model weights (`.pt`) and image data
    pip install -r requirements.txt
    ```
 
-4. **Environment Variables:** Create a `.env` file in the root directory and add your [Groq API]([url](https://console.groq.com/)) key:
+4. **Environment Variables:** Create a `.env` file in the root directory and add your [Groq API](https://console.groq.com/) key:
    ```env
    GROQ_API_KEY=your_api_key_here
    ```
